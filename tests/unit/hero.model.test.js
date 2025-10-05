@@ -1,9 +1,12 @@
-const { connect, clear, close } = require("../tests/test-db");
-const Hero = require("../server/models/hero");
+const { connect, clear, close } = require("../test-db");
+// const Hero = require("../../server/models/Hero.js");
 
 describe("Hero Model Validation & Shape", () => {
+  let Hero;
   beforeAll(async () => {
     await connect();
+    // await Hero.init();
+    Hero = require("../../server/models/Hero.js"); // load model AFTER connecting
     await Hero.init();
   });
 

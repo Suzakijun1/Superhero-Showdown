@@ -1,12 +1,14 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const { connect, clear, close } = require("../tests/test-db");
+const { connect, clear, close } = require("../test-db.js");
 
-const User = require("../server/models/user");
+// const User = require("../../server/models/User");
 
 describe("User Model Validation & Behavior", () => {
+  let User;
   beforeAll(async () => {
     await connect();
+    User = require("../../server/models/User");
     // Ensure unique indexes are created before testing duplicates
     await User.init();
   });
