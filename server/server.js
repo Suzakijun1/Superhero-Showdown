@@ -39,40 +39,54 @@
 
 // startApolloServer();
 
+// server/server.js
 const express = require("express");
-const cors = require("cors");
+const path = require("path");
 const { ApolloServer } = require("apollo-server-express");
-require("./config/connection"); // guarded to skip connect in tests
 const typeDefs = require("./schemas/typeDefs");
 const resolvers = require("./schemas/resolvers");
+const db = require("./config/connection");
 const { getUserFromReq } = require("./utils/auth");
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
+// avoid global body parsers in tests (prevents double parsing)
+if (process.env.NODE_ENV !== "test") {
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
+}
+
+let server;
 async function initApollo() {
-  const server = new ApolloServer({
+  if (server) return;
+  server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: ({ req }) => {
-      const user = getUserFromReq(req);
-      return { user, req };
-    },
+    context: ({ req }) => ({ user: getUserFromReq(req) }),
   });
   await server.start();
   server.applyMiddleware({ app, path: "/graphql" });
-  return server;
 }
 
+// Only static + listen outside tests
 if (process.env.NODE_ENV !== "test") {
   (async () => {
     await initApollo();
-    const PORT = process.env.PORT || 4000;
-    app.listen(PORT, () =>
-      console.log(`Server ready at http://localhost:${PORT}/graphql`)
+
+    app.use(express.static(path.join(__dirname, "../client/build")));
+    app.get("/*", (_req, res) =>
+      res.sendFile(path.join(__dirname, "../client/build/index.html"))
     );
+
+    db.once("open", () => {
+      const PORT = process.env.PORT || 3001;
+      app.listen(PORT, () => {
+        console.log(`API server running on port ${PORT}`);
+        console.log(
+          `Use GraphQL at http://localhost:${PORT}${server.graphqlPath}`
+        );
+      });
+    });
   })();
 }
 
