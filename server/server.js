@@ -47,7 +47,6 @@ const typeDefs = require("./schemas/typeDefs");
 const resolvers = require("./schemas/resolvers");
 const db = require("./config/connection");
 const { getUserFromReq } = require("./utils/auth");
-
 const app = express();
 
 // avoid global body parsers in tests (prevents double parsing)
